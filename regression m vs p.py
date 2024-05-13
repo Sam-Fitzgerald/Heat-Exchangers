@@ -23,6 +23,3 @@ def hot():
     plt.show()
     return fit
 
-   
-def mass_flow(p_loss_shell,p_loss_tube,saftey factor):
-
