@@ -37,19 +37,19 @@ def massflow_hot( dp ):
 
 def dp(v, l_pipe, di, f, rho = 990.1):
     dp_temp = 0.5*rho*(v**2)*f*l_pipe/di
-    print(dp_temp)
     return(dp_temp)
 
 def friction(Re):
     temp_re = 1.82*np.log10(Re)-1.64
     return (temp_re**(-2))
 
-def kc_ke(tmep1, aprfd):
-    return(0.45, 0.8)
+def kc_ke(Re, sigma):
+    Kc =  0.41 +0.12*np.exp(-0.000026*(Re-3000)) - 0.4*sigma
+    Ke = (1-sigma)**2 # for Re is infinate case (worst case) could be up to 0.1 smaller   
+    return Kc, Ke
 
 def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
     #hot stream analysis
-    l_pipe = 3.5/n
     massflow_per_tube = massflow_h / n
     v_pipe = velocity(massflow_per_tube, di)
     v_noz2 = velocity(massflow_h, 0.02)
@@ -57,7 +57,7 @@ def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
     f = friction (Re_hot)
     #ends
     area_r = n*((di**2)/(0.064**2))
-    kc, ke = kc_ke(area_r, Re_hot)
+    kc, ke = kc_ke(Re_hot, area_r)
 
     #pdrop for hot stream
     dp_nozzle2 = rho*(v_noz2**2)
@@ -65,25 +65,30 @@ def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
     dp_hot_pipe = dp(v_pipe, 0.35, di, f)
     dp_total_hot = dp_nozzle2 + dp_ends + dp_hot_pipe
     massflow_h = massflow_hot(dp_total_hot*0.00001)
-    #print(dp_hot_pipe)
     return(massflow_h, dp_total_hot)
 
-def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, do_tube = 0.008, di_shell = 0.064, rho = 110.1, l_shell = 0.35):
+def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
     baffle_dist = l_shell/(n_baffle + 1)
     a_shell = di_shell*(pitch-do_tube)*baffle_dist/pitch
-    a_pipe = (do_tube**2)*3.141592*0.25
-    v_shell = velocity(massflow_c, di_shell)
+
+    a_pipe = (0.064**2)*3.141592*0.25
+
+
+    v_shell = massflow_c/(rho*a_shell) #used due to area being different to straight pipe size
+
+
     dprime_shell = di_shell*(a_shell/a_pipe)
     Re_cold = reynolds(v_shell, dprime_shell)
 
 
     #assuming a = 0.34 for triangular
-    v_noz1 = velocity(massflow_c, di_shell)
+    v_noz1 = velocity(massflow_c, 0.02)
 
     #dp for the shell assuming a = 0.34 for triangular
-    dp_shell = (4*0.34*n_pipe*rho)*(v_shell**2)*(Re_cold**(-0.15))
+    dp_shell = (4*a_value*n_pipe*rho)*(v_shell**2)*(Re_cold**(-0.15))
     dp_nozzle1 = rho*(v_noz1**2)
     dp_total_cold = dp_nozzle1 + dp_shell
+    print(dp_total_cold)
     massflow_c = massflow_cold(dp_total_cold*0.00001)
     return(massflow_c, dp_total_cold)
 
@@ -92,12 +97,15 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, do_tube = 0.008, di_shell = 
 
 
 
+
+
+#changeable
 n_pipe = 13
 n_baffle = 9
 pitch = 0.014  #for a square
 massflow_h = 0.45
 massflow_c = 0.5
-
+a_value = {"triangle":0.2, "square":0.34}
 
 
 for i in range (1, 5):  
@@ -105,10 +113,10 @@ for i in range (1, 5):
     massflow_h, dp_total_hot = hot_dp_mf(n_pipe, massflow_h,)
 
     #cold stream analysis
-    massflow_c, dp_total_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, do_tube = 0.008, di_shell = 0.064, rho = 110.1, l_shell = 0.35)
+    massflow_c, dp_total_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"])
     
     #print("dp")
-    #print (dp_total_hot, dp_total_cold)
+    print (dp_total_hot, dp_total_cold)
     #print("mdot")
     #print (massflow_c, massflow_h)
 
@@ -123,7 +131,8 @@ for i in range (1, 5):
 
 #look at f
 #look at baffles
-
+#d'shell
+#correction factor
 
 
 #thermal analysis
