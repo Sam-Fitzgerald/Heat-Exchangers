@@ -1,0 +1,98 @@
+import numpy as np
+T_in_hot = 20
+T_in_cold = 60
+rho = 990.1
+Cp = 4179
+mu = 0.000651
+Pr = 4.31
+k = 0.632
+k_tube = 386
+ltot = 3.5
+
+#Dimensions
+di_shell = 0.064
+d_noz = 0.02
+di_tube = 0.006
+do_tube = 0.008
+l_shell = 0.35
+
+#defs
+def reynolds(v, di, mu = 0.000651, rho = 990.1):
+    return(rho*di*v/mu)
+
+def velocity(m_dot,diameter, rho = 990.1):
+    a_temp = 3.1415926*0.25*(diameter^2)
+    return(m_dot/(rho*a_temp))
+
+def massflow( T, dp ):
+    return(0.45)
+def massflowtemp( T, dp ):
+    return(0.5)
+
+def dp(v, l_pipe, di, f, rho = 110.1):
+    dp_temp = 0.5*rho*(v**2)*f*l_pipe/di
+    return(dp_temp)
+def friction(Re):
+    temp_re = 1.82*np.log(Re)-1.64
+    return (temp_re**(-2))
+def kc_ke():
+    return(0.45, 0.8)
+
+#variable consts
+n_pipe = 12
+n_baffle = 9
+pitch = 0.014  #for a square 
+massflow_h = massflow(0, 1)
+massflow_c = massflowtemp(0,1)
+
+
+#const calculator
+
+#inner tubes
+l_pipe = 3.5/n_pipe
+baffle_dist = l_shell/(n_baffle + 1)
+massflow_tube = massflow_h / n_pipe
+v_pipe = velocity(massflow_tube, di_tube)
+v_noz2 = velocity(massflow_h, 0.02)
+Re_hot = reynolds (v_pipe, di_tube)
+f = friction (Re_hot)
+
+#ends
+area_r = n_pipe((di_tube**2)/(di_shell**2))
+kc, ke = kc_ke()
+
+
+
+
+
+
+
+#pdrop for hot stream
+dp_nozzle2 = rho*(v_noz2**2)
+dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)
+dp_hot_pipe = dp(v_pipe,f, l_pipe, di_tube)
+
+
+#cold stream analysis
+
+#shell area
+a_shell = di_shell*(pitch-do_tube)*baffle_dist/pitch
+a_pipe = (do_tube**2)*3.141592*0.25
+v_shell = velocity(massflow_c, di_shell)
+dprime_shell = di_shell*(a_shell/a_pipe)
+Re_cold = reynolds(v_shell, dprime_shell)
+
+
+#assuming a = 0.34 for triangular
+v_noz1 = velocity(massflow_c, di_shell)
+
+#dp for the shell assuming a = 0.34 for triangular
+dp_shell = (4*0.34*n_pipe*rho)*(v_pipe**2)*(Re_cold**(-0.15))
+dp_nozzle1 = rho*(v_noz1**2)
+
+
+
+
+
+
+#thermal analysis
