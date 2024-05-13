@@ -15,6 +15,7 @@ di_shell = 0.064
 d_noz = 0.02
 di_tube = 0.006
 do_tube = 0.008
+l_shell = 0.35
 
 
 #defs
@@ -33,7 +34,6 @@ def massflow_hot( dp ):
     hot=[-0.56650603, -0.55701057,  0.50554665]
     return (hot[2] +hot[1]*dp +hot[0]*dp**2)
 
-
 def dp(v, l_pipe, di, f, rho = 990.1):
     dp_temp = 0.5*rho*(v**2)*f*l_pipe/di
     return(dp_temp)
@@ -47,27 +47,21 @@ def kc_ke(Re, sigma):
     Ke = (1-sigma)**2 # for Re is infinate case (worst case) could be up to 0.1 smaller   
     return Kc, Ke
 
-def hot_dp_mf(n, massflow_h, l_tot, di = 0.006, rho = 990.1):
+def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
     #hot stream analysis
     massflow_per_tube = massflow_h / n
-
     v_pipe = velocity(massflow_per_tube, di)
-
     v_noz2 = velocity(massflow_h, 0.02)
-
     Re_hot = reynolds (v_pipe, di)
-
     f = friction (Re_hot)
-
     #ends
-    area_r = n*((di**2)/(0.064**2/2))
-
+    area_r = n*((di**2)/(0.064**2))
     kc, ke = kc_ke(Re_hot, area_r)
 
     #pdrop for hot stream
     dp_nozzle2 = rho*(v_noz2**2)
-    dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)*2
-    dp_hot_pipe = dp(v_pipe, l_tot, di, f)
+    dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)
+    dp_hot_pipe = dp(v_pipe, 0.35, di, f)
     dp_total_hot = dp_nozzle2 + dp_ends + dp_hot_pipe
     massflow_h = massflow_hot(dp_total_hot*0.00001)
     return(massflow_h, dp_total_hot)
@@ -75,7 +69,6 @@ def hot_dp_mf(n, massflow_h, l_tot, di = 0.006, rho = 990.1):
 def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
     baffle_dist = l_shell/(n_baffle + 1)
     a_shell = di_shell*(pitch-do_tube)*baffle_dist/pitch
-
 
     a_pipe = (0.064**2)*3.141592*0.25
 
@@ -94,11 +87,73 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
     dp_shell = (4*a_value*n_pipe*rho)*(v_shell**2)*(Re_cold**(-0.15))
     dp_nozzle1 = rho*(v_noz1**2)
     dp_total_cold = dp_nozzle1 + dp_shell
-    #print(dp_total_cold)
+    print(dp_total_cold)
     massflow_c = massflow_cold(dp_total_cold*0.00001)
     return(massflow_c, dp_total_cold)
 
+def H(hi,Ai,ro,ri,k_tube,L,ho,Ao):
+    H = (1/hi + Ai*np.log(ro/ri)/(2*np.pi*k_tube*L) + (1/ho)*(Ai/Ao))**-1
+    return H
 
+def Nu_i(Re_tube,Pr):
+    Nu_i = 0.023 * Re_tube**0.8 * Pr**0.3
+    return Nu_i
+
+def Nu_o(c,Re_sh,Pr):
+    Nu_o = 0.023 * Re_sh**0.8 * Pr**0.3
+    return Nu_o
+
+def hi(Nu_i,kw,di):
+    hi = Nu_i*kw/di
+    return hi
+
+def ho(Nu_o,kw,do):
+    ho = Nu_o*kw/do
+    return ho
+def A(N,di,L):
+    A = N * np.pi *di *L
+    return A
+
+def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, F, Cp,N,di,L):
+    
+    Th_prev = 0
+    Tc_prev = 0
+    A = N * np.pi *di *L
+    while abs(Th-Th_prev) > error or abs(Tc-Tc_prev) > error:
+        Th_prev = Th
+        Tc_prev = Tc
+        #print(Th,Tc)
+        LMTD = abs(((Th_in-Tc) - (Th-Tc_in))/(np.log((Th_in-Tc)/(Th-Tc_in))))
+        #print(LMTD)
+        Tc = (H * A * LMTD * F)/(mass_flow_sh * Cp) + Tc_in
+        Th = -1* (H * A * LMTD * F)/(mass_flow_tube * Cp)  + Th_in
+    R = (Th_in-Th)/(Tc-Tc_in)
+    P = (Tc-Tc_in)/(Th_in-Tc_in)
+    kappa = ((R**2+1)**0.5)/(R-1)
+    F = (kappa*(np.log((1-P)/(1-P*R))))/np.log(((2/P)-1-R+((R**2+1)**0.5))/((2/P)-1-R-((R**2+1)**0.5)))
+    Q = H * A * LMTD * F
+    mass = [mass_flow_sh,mass_flow_tube]
+    min_flow = min(mass)
+    e = Q/(min_flow*Cp*(Th_in-Tc_in))
+    print(Q,e)
+    return Q,e
+
+
+def NTU(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, F, Cp,N,di,L,no_pass):
+    A = N * np.pi *di *L
+    
+    NTU = (H *A)/Cp
+    #print(NT
+    Rc = 1
+
+    #e_co = (1-np.exp(-NTU*(1+Rc)))/(1+Rc)
+    #e_counter = (1-np.exp(-NTU*(1-Rc)))/(1-Rc*np.exp(-NTU*(1-Rc)))
+
+    e = 2* (1 +Rc + (1+Rc**2)**0.5 * (1+np.exp(-1*NTU*(1+Rc**2)**0.5))/(1-np.exp(-1*NTU*(1+Rc**2)**0.5)))**-1
+    #print(e)
+    Q_max = Cp*(Th_in-Tc_in)
+    Q = e*Q_max
+    print(Q,e)
 
 
 
@@ -106,36 +161,35 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
 
 
 #changeable
-n_pipe = 7
+n_pipe = 13
 n_baffle = 9
 pitch = 0.014  #for a square
 massflow_h = 0.45
 massflow_c = 0.5
-l_shell = ltot/(2*n_pipe)
-if l_shell > 0.35:
-    l_shell = 0.35
 a_value = {"triangle":0.2, "square":0.34}
 
 
 for i in range (1, 5):  
     #hot stream analysis
-    massflow_h, dp_total_hot = hot_dp_mf(n_pipe,massflow_h, l_shell)
+    massflow_h, dp_total_hot = hot_dp_mf(n_pipe, massflow_h,)
 
     #cold stream analysis
-    massflow_c, dp_total_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"], l_shell = l_shell)
+    massflow_c, dp_total_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"])
     
-    print("dp")
+    #print("dp")
     print (dp_total_hot, dp_total_cold)
-    print("mdot")
+    #print("mdot")
     print (massflow_c, massflow_h)
 
     
 
 
 
+LMTD = LMTD_counter(massflow_h,massflow_c,T_in_hot,T_in_cold,9878.692 , 0.01, 55, 27, 1, Cp,n_pipe,di_tube,l_shell)
+print(LMTD)
 
 
-
+NTU_val = NTU(massflow_h,massflow_c,T_in_hot,T_in_hot,9878.692,0.01, 55, 27, 1, Cp,n_pipe,di_tube,l_shell, 1)
 
 
 #look at f
