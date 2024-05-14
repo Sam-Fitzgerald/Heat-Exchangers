@@ -49,9 +49,9 @@ def kc_ke(Re, sigma):
     Ke = (1-sigma)**2 # for Re is infinate case (worst case) could be up to 0.1 smaller   
     return Kc, Ke
 
-def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
+def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
     #hot stream analysis
-    massflow_per_tube = massflow_h / n
+    massflow_per_tube = massflow_h / (n/no_pass)
     v_pipe = velocity(massflow_per_tube, di)
     v_noz2 = velocity(massflow_h, 0.02)
     Re_hot = reynolds (v_pipe, di)
@@ -62,9 +62,13 @@ def hot_dp_mf(n, massflow_h, di = 0.006, rho = 990.1):
 
     #pdrop for hot stream
     dp_nozzle2 = rho*(v_noz2**2)
-    dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)
-    dp_hot_pipe = dp(v_pipe, 0.35, di, f)
+
+    dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)*(no_pass)
+
+    dp_hot_pipe = dp(v_pipe, l_per_pipe , di, f)
+
     dp_total_hot = dp_nozzle2 + dp_ends + dp_hot_pipe
+
     massflow_h = massflow_hot(dp_total_hot*0.00001)
     return(massflow_h, dp_total_hot, Re_hot)
 
@@ -90,9 +94,12 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
     dp_nozzle1 = rho*(v_noz1**2)
     dp_total_cold = dp_nozzle1 + dp_shell
     #print(dp_total_cold)
+    #print(dp_total_cold)
     massflow_c = massflow_cold(dp_total_cold*0.00001)
     return(massflow_c, dp_total_cold, Re_cold)
  
+
+#LMTD
 def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube):
     
 
@@ -107,12 +114,9 @@ def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube):
     H = (1/hi + Ai*np.log(do_tube/di_tube)/(2*np.pi*k_tube*L) + (1/ho)*(Ai/Ao))**-1
     print(H)
     return H
-
-    
 def A(N,di,L):
     A = N * np.pi *di *L
     return A
-
 def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L,No_pass,No_sh):
     
     Th_prev = 0
@@ -146,8 +150,6 @@ def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,d
     e = Q/(min_flow*Cp*(Th_in-Tc_in)) # effectivness calcualtion
     print(f'Total heat transfer:{Q},Effectivness:{e}')
     return Q,e
-
-
 def NTU(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
     A = N * np.pi *di *L #Total heat transfer area
     
@@ -174,12 +176,19 @@ def NTU(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
 
 
 
+
 #changeable
-n_pipe = 13
-n_baffle = 9
-pitch = 0.014  #for a square
+n_pipe = 12 #use total pipes
+n_baffle = 9 #use baffles per section for now
+pitch = 0.014  #for a square, keeping const for now
 massflow_h = 0.47
 massflow_c = 0.7
+
+l_shell_max = 0.28 - (0.28/(n_baffle+1))
+l_shell = ltot/(n_pipe)
+if l_shell > l_shell_max:
+    l_shell = l_shell_max
+
 a_value = {"triangle":0.2, "square":0.34}
 No_pass = 4
 No_sh =2
@@ -188,15 +197,15 @@ pitch
 
 for i in range (1, 5):  
     #hot stream analysis
-    massflow_h, dp_total_hot, Re_hot = hot_dp_mf(n_pipe, massflow_h,)
+    massflow_h, dp_total_hot, Re_hot = hot_dp_mf(n_pipe, massflow_h, No_pass, l_shell)
 
     #cold stream analysis
     massflow_c, dp_total_cold, Re_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"])
     
-    #print("dp")
-    #print (dp_total_hot, dp_total_cold)
-    #print("mdot")
-    #print (massflow_c, massflow_h)
+    print("dp")
+    print (dp_total_hot, dp_total_cold)
+    print("mdot")
+    print (massflow_c, massflow_h)
 
     
 
