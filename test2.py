@@ -61,7 +61,7 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
         v_pipe = velocity(massflow_per_tube, di)
         v_noz2 = velocity(massflow_h, 0.02)
         Re_hot = reynolds (v_pipe, di)
-        print(Re_hot)
+        #print(Re_hot)
         f = friction (Re_hot)
         #ends
         area_r = n*((di**2)/(0.064**2))
@@ -69,7 +69,7 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
 
         #pdrop for hot stream
         dp_nozzle2 = rho*(v_noz2**2)
-
+        
         dp_ends = 0.5*rho*(v_pipe**2)*(kc+ke)*(no_pass)
 
         dp_hot_pipe = no_pass * dp(v_pipe, l_per_pipe , di, f)
