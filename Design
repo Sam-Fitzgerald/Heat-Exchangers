@@ -14,7 +14,7 @@ di_shell = 0.064
 d_noz = 0.02
 di_tube = 0.006
 do_tube = 0.008
-l_shell = 0.35
+l_shell = ltot/n
 
 #defs
 def reynolds(v, di, mu = 0.000651, rho = 990.1):
