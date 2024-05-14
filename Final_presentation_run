@@ -89,7 +89,7 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
     dp_shell = (4*a_value*n_pipe*rho)*(v_shell**2)*(Re_cold**(-0.15))
     dp_nozzle1 = rho*(v_noz1**2)
     dp_total_cold = dp_nozzle1 + dp_shell
-    print(dp_total_cold)
+    #print(dp_total_cold)
     massflow_c = massflow_cold(dp_total_cold*0.00001)
     return(massflow_c, dp_total_cold, Re_cold)
  
@@ -97,7 +97,7 @@ def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube):
     
 
     Nu_i = 0.023 * Re_tube**0.8 * Pr**0.3 #Nusselt number in hot stream
-    Nu_o = 0.023 * Re_sh**0.8 * Pr**0.3 #Nussult number in cold stream
+    Nu_o = 0.193 * Re_sh**0.618 * Pr**0.333 #Nussult number in cold stream
     
     hi = Nu_i*k/di_tube # inner surface Heat transfer coefficient
     ho = Nu_o*k/do_tube # Outer surface Heat transfer coefficient
@@ -183,6 +183,7 @@ massflow_c = 0.7
 a_value = {"triangle":0.2, "square":0.34}
 No_pass = 4
 No_sh =2
+pitch 
 
 
 for i in range (1, 5):  
@@ -193,20 +194,20 @@ for i in range (1, 5):
     massflow_c, dp_total_cold, Re_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"])
     
     #print("dp")
-    print (dp_total_hot, dp_total_cold)
+    #print (dp_total_hot, dp_total_cold)
     #print("mdot")
-    print (massflow_c, massflow_h)
+    #print (massflow_c, massflow_h)
 
     
 
 
 H_coef = H(Pr,k_tube,l_shell,Re_hot,Re_cold,k,di_tube,do_tube)
 
-LMTD = LMTD_counter(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef , 0.01, 55, 27, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
+#LMTD = LMTD_counter(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef , 0.01, 55, 27, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
 #print(LMTD)
 
 
-NTU_val = NTU(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
+#NTU_val = NTU(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
 
 
 #look at f
