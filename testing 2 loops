@@ -60,7 +60,7 @@ def hot_dp_mf(n, massflow_h, l_tot, di = 0.006, rho = 990.1):
     f = friction (Re_hot)
 
     #ends
-    area_r = n*((di**2)/(0.064**2/2))
+    area_r = n*((di**2)/(0.064**2))*2
 
     kc, ke = kc_ke(Re_hot, area_r)
 
@@ -114,6 +114,7 @@ massflow_c = 0.5
 l_shell = ltot/(2*n_pipe)
 if l_shell > 0.35:
     l_shell = 0.35
+ltot = l_shell*n_pipe*2
 a_value = {"triangle":0.2, "square":0.34}
 
 
