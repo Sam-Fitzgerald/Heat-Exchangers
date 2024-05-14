@@ -107,7 +107,7 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
 n_pipe = 12 #use total pipes
 n_baffle = 9 #use baffles per section for now
 pitch = 0.014  #for a square, keeping const for now
-massflow_h = 0.47
+massflow_h = 0.2
 massflow_c = 0.7
 
 l_shell_max = 0.28 - (0.28/(n_baffle+1))
