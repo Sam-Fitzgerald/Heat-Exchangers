@@ -75,8 +75,9 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
         dp_hot_pipe = no_pass * dp(v_pipe, l_per_pipe , di, f)
 
         dp_total_hot = dp_nozzle2 + dp_ends + dp_hot_pipe
+        print(dp_nozzle2,dp_ends,dp_hot_pipe)
         print(dp_total_hot)
-        massflow_h = massflow_hot(dp_total_hot*0.00001)
+        massflow_h = (massflow_h + massflow_hot(dp_total_hot*0.00001))/2
         print(massflow_h)
     return(massflow_h, dp_total_hot, Re_hot)
 
@@ -84,7 +85,7 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
 n_pipe = 12 #use total pipes
 n_baffle = 9 #use baffles per section for now
 pitch = 0.014  #for a square, keeping const for now
-massflow_h = 0.272
+massflow_h = 0.24
 massflow_c = 0.7
 
 l_shell_max = 0.28 - (0.28/(n_baffle+1))
@@ -93,7 +94,7 @@ if l_shell > l_shell_max:
     l_shell = l_shell_max
 
 a_value = {"triangle":0.2, "square":0.34}
-No_pass = 2
-No_sh =1
+No_pass = 4
+No_sh =2
 
 hot_dp_mf(n_pipe, massflow_h, No_pass, l_shell)
