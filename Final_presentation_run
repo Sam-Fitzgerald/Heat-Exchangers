@@ -56,7 +56,7 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
 
     massflow_h_new = 999
     
-    while abs(massflow_h_new-massflow_h) > 0.0001:
+    while abs(massflow_h_new-massflow_h) > 0.001:
         massflow_h = massflow_h + 0.00001
         massflow_per_tube = massflow_h / (n/no_pass)
         massflow_h_prev = massflow_h
@@ -84,14 +84,14 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
         print(massflow_h_new,massflow_h)
     return(massflow_h, dp_total_hot, Re_hot)
 
-def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
+def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
     baffle_dist = l_shell/(n_baffle + 1)
     a_shell = di_shell*(pitch-do_tube)*baffle_dist/pitch
 
-    a_pipe = (0.064**2)*3.141592*0.25
+    a_pipe = (0.064**2)*np.pi*0.25 
 
 
-    v_shell = massflow_c/(rho*a_shell) #used due to area being different to straight pipe size
+    v_shell = massflow_c/(rho*a_shell*No_sh) #used due to area being different to straight pipe size
 
 
     dprime_shell = di_shell*(a_shell/a_pipe)
@@ -112,25 +112,25 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value, do_tube = 0.008, di_
  
 #757.1100602298422 3261.977223601896 3081.640166719943
 #LMTD
-def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube):
+def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube,No_pass):
     
 
     Nu_i = 0.023 * Re_tube**0.8 * Pr**0.3 #Nusselt number in hot stream
     Nu_o = 0.193 * Re_sh**0.618 * Pr**0.333 #Nussult number in cold stream
-    
+    print(Nu_i,Nu_o)
     hi = Nu_i*k/di_tube # inner surface Heat transfer coefficient
     ho = Nu_o*k/do_tube # Outer surface Heat transfer coefficient
-
-    Ai = np.pi*di_tube*L 
-    Ao = np.pi*do_tube*L
-    H = (1/hi + Ai*np.log(do_tube/di_tube)/(2*np.pi*k_tube*L) + (1/ho)*(Ai/Ao))**-1
+    l_dash = L*No_pass
+    Ai = np.pi*di_tube*l_dash
+    Ao = np.pi*do_tube*l_dash
+    H = (1/hi + Ai*np.log(do_tube/di_tube)/(2*np.pi*k_tube*l_dash) + (1/ho)*(Ai/Ao))**-1
     print(H)
     return H
 def A(N,di,L):
     A = N * np.pi *di *L
     return A
-def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L,No_pass,No_sh):
-    
+def LMTD_counter(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L,No_pass,No_sh):
+    mass_flow_tube = No_pass*mass_flow_h/N
     Th_prev = 0
     Tc_prev = 0
     A = N * np.pi *di *L
@@ -139,10 +139,11 @@ def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,d
         Th_prev = Th
         Tc_prev = Tc # Set previous values
         #print(Th,Tc)
+        print(T_in_hot,T_in_cold,Th,Tc)
         LMTD = abs(((Th_in-Tc) - (Th-Tc_in))/(np.log((Th_in-Tc)/(Th-Tc_in)))) #LMTD equation
-        #print(LMTD)
+        print(LMTD)
         Tc = (H * A * LMTD * F)/(mass_flow_sh * Cp) + Tc_in 
-        Th = -1* (H * A * LMTD * F)/(mass_flow_tube * Cp)  + Th_in # Update temperatures
+        Th = -1* (H * A * LMTD * F)/(mass_flow_h * Cp)  + Th_in # Update temperatures
         R = (Th_in-Th)/(Tc-Tc_in)
         P = (Tc-Tc_in)/(Th_in-Tc_in)
         kappa = ((R**2+1)**0.5)/(R-1)
@@ -150,35 +151,39 @@ def LMTD_counter(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,d
             #F = (kappa*(np.log((1-P)/(1-P*R))))/np.log(((2/P)-1-R+((R**2+1)**0.5))/((2/P)-1-R-((R**2+1)**0.5))) #Solve correction factor
         #elif No_pass == 4 and No_sh ==2:
            # F = (kappa/2)*(()/)
+        
         if No_pass == 2*No_sh:
             Pn = (1-((1-P*R)/(1-P))**No_sh)/(R-((1-P*R)/(1-P))**No_sh)
             W = (1-Pn*R)/(1-Pn)
             F = 2**0.5 * (W)/np.log((1/W + 1/2**0.5)/(1/W - 1/2**0.5))
+            print(F)
         else:
             F=1
     Q = H * A * LMTD * F # Find total heat transfer
-    mass = [mass_flow_sh,mass_flow_tube]
+    mass = [mass_flow_sh,mass_flow_h]
     min_flow = min(mass) #Find minimum capacity stream
     e = Q/(min_flow*Cp*(Th_in-Tc_in)) # effectivness calcualtion
     print(f'Total heat transfer:{Q},Effectivness:{e}')
     return Q,e
-def NTU(mass_flow_tube,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
+def NTU(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
     A = N * np.pi *di *L #Total heat transfer area
-    
-    NTU = (H *A)/(Cp*mass_flow_tube) #NTU equation
+    print(A,mass_flow_h,Cp,H)
+    mass_flow_tube = No_pass*mass_flow_h/N
+    NTU = (H *A)/(Cp*mass_flow_h) #NTU equation
     print(NTU)
-    Rc = mass_flow_tube/mass_flow_sh #Capacity ratio
+    Rc = mass_flow_h/mass_flow_sh #Capacity ratio
 
     #e_co = (1-np.exp(-NTU*(1+Rc)))/(1+Rc)
     #e_counter = (1-np.exp(-NTU*(1-Rc)))/(1-Rc*np.exp(-NTU*(1-Rc)))
 
     e1 = 2* (1 +Rc + (1+Rc**2)**0.5 * (1+np.exp(-1*NTU*(1+Rc**2)**0.5))/(1-np.exp(-1*NTU*(1+Rc**2)**0.5)))**-1 # effectivness equation
+    print(e1)
     if No_pass == 2*No_sh:
         e = (((1-e1*Rc)/(1-e1))**No_sh -1)/(((1-e1*Rc)/(1-e1))**No_sh -Rc)
     else:
         e = e1
     #print(e)
-    Q_max = mass_flow_tube*Cp*(Th_in-Tc_in)
+    Q_max = mass_flow_h*Cp*(Th_in-Tc_in)
     print(Q_max)
     Q = e*Q_max
     print(f'Total heat transfer:{Q},Effectivness:{e}')
@@ -206,29 +211,29 @@ No_pass = 2
 No_sh =1
 
 massflow_h_final, dp_total_hot, Re_hot = hot_dp_mf(n_pipe, massflow_h, No_pass, l_shell) 
-
-'''for i in range (1, 5):  
+print(massflow_h_final, dp_total_hot, Re_hot)
+for i in range (1, 5):  
     #hot stream analysis
 
     #cold stream analysis
-    massflow_c, dp_total_cold, Re_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe, a_value["square"],l_shell=l_shell)
+    massflow_c, dp_total_cold, Re_cold = cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,No_sh, a_value["square"],l_shell=l_shell)
     
     #print("dp")
     #print("mdot")
-    #print (massflow_c, massflow_h_final)'''
+    #print (massflow_c, massflow_h_final)
 
 
 
  
 
 
-#H_coef = H(Pr,k_tube,l_shell,Re_hot,Re_cold,k,di_tube,do_tube)
+H_coef = H(Pr,k_tube,l_shell,Re_hot,Re_cold,k,di_tube,do_tube,No_pass)
 
-#LMTD = LMTD_counter(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef , 0.01, 55, 27, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
+LMTD = LMTD_counter(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef , 0.01, 50, 27, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
 #print(LMTD)
 
 
-#NTU_val = NTU(massflow_h,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
+NTU_val = NTU(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
 
 
 #look at f
