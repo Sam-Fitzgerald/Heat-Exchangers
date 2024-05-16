@@ -83,7 +83,7 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
             print('increase iterative accuracy')
         #print(massflow_h_new,massflow_h)
         #print("lol")
-    print("mass hot calc")
+    #print("mass hot calc")
     return(massflow_h, dp_total_hot, Re_hot)
 
 def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
@@ -100,9 +100,13 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
     a_pipe = (0.064**2)*np.pi*0.25 
     dprime_shell = di_shell*(a_shell/a_pipe)
     massflow_c_prev= 0
-    massflow_c_new = massflow_c
+    massflow_c_new = 0.1
     
     while abs(massflow_c_new-massflow_c_prev) > 0.001:
+        print("dprime is ")
+        print(dprime_shell)
+        print("pitch is ")
+        print(pitch)
         v_shell = massflow_c_new/(rho*a_shell) #used due to area being different to straight pipe size
         Re_cold = reynolds(v_shell, dprime_shell)
 
@@ -110,13 +114,16 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
 
         #dp for the shell
         dp_shell = (4*a_value*n_pipe*rho)*(v_shell**2)*(Re_cold**(-0.15))
-
+        print("dp is ")
+        print(dp_shell)
         dp_nozzle1 = rho*(v_noz1**2)
 
         dp_total_cold = dp_nozzle1 + dp_shell
         #print(dp_total_cold)
         #print(dp_total_cold)
         massflow_c_prev = massflow_c_new
+        print("massflow c is ")
+        print(massflow_c_new)
         massflow_c_new = massflow_cold(dp_total_cold*0.00001)*(rho/1000)
     print("mass cold calc")
     return(massflow_c_new, dp_total_cold, Re_cold)
@@ -175,7 +182,7 @@ def LMTD_counter(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L
     min_flow = min(mass) #Find minimum capacity stream
     e = Q/(min_flow*Cp*(Th_in-Tc_in)) # effectivness calcualtion
     #print(f'Total heat transfer:{Q},Effectivness:{e}')
-    print("LMTD calc done")
+    #print("LMTD calc done")
     return Q,e
 def NTU(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
     A = N * np.pi *di *L #Total heat transfer area
@@ -199,7 +206,7 @@ def NTU(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
     #print(Q_max)
     Q = e*Q_max
     #print(f'Total heat transfer:{Q},Effectivness:{e}')
-    print("NTU calc done")
+    #print("NTU calc done")
 
 
 
@@ -245,7 +252,7 @@ NTU_val = NTU(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,d
 LMTD_optimum = 0
 config = []
 for n_pipe in range(6, 20):
-    for n_baffle in range(1, 20):
+    for n_baffle in range(1, 19):
             for No_pass in range (1, 5):
                 for No_sh in range (1, 3):
 
