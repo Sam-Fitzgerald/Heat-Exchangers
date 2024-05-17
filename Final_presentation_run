@@ -89,11 +89,11 @@ def hot_dp_mf(n, massflow_h, no_pass, l_per_pipe, di = 0.006, rho = 990.1):
 def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.008, di_shell = 0.064, rho = 990.1, l_shell = 0.35):
     baffle_dist = l_shell/(n_baffle + 1)
     #a_shell = di_shell*(pitch-do_tube)*baffle_dist/pitch
-    factor = np.round(n_pipe/4)
-    if n_pipe == 14 or 10:
+    factor = n_pipe/4
+    """if n_pipe == 14 or 10:
         factor = 4
     if n_pipe == 13:
-        factor = 5
+        factor = 5"""
 
     pitch = di_shell/factor
     a_shell = (pitch-do_tube)*baffle_dist*factor
@@ -284,6 +284,8 @@ for n_pipe in range(6, 20):
                     if LMTD[0] > LMTD_optimum:
                         LMTD_optimum = LMTD[0]
                         config = [n_pipe, n_baffle, pitch, No_pass, No_sh]
+
+
 
 print(LMTD_optimum)
 print(config)
