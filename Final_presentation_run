@@ -101,8 +101,8 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
     dprime_shell = di_shell*(a_shell/a_pipe)
     massflow_c_prev= 0
     massflow_c_new = 0.1
-    
-    while abs(massflow_c_new-massflow_c_prev) > 0.001:
+    counter = 0
+    while abs(massflow_c_new-massflow_c_prev) > 0.001 and counter < 100:
         print("dprime is ")
         print(dprime_shell)
         print("pitch is ")
@@ -125,6 +125,8 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
         print("massflow c is ")
         print(massflow_c_new)
         massflow_c_new = massflow_cold(dp_total_cold*0.00001)*(rho/1000)
+    if counter > 99:
+        massflow_c = np.nan
     print("mass cold calc")
     return(massflow_c_new, dp_total_cold, Re_cold)
  
