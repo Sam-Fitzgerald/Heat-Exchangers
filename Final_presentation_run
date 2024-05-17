@@ -92,7 +92,7 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
 
 
     v_shell = massflow_c/(rho*a_shell*No_sh) #used due to area being different to straight pipe size
-
+    print(v_shell)
 
     dprime_shell = di_shell*(a_shell/a_pipe)
     Re_cold = reynolds(v_shell, dprime_shell)
@@ -114,17 +114,17 @@ def cold_dp_mf(pitch, n_baffle, massflow_c, n_pipe,a_value,No_sh, do_tube = 0.00
 #LMTD
 def H(Pr,k_tube,L,Re_tube,Re_sh,k,di_tube,do_tube,No_pass):
     
-
+    #print(Re_tube,Re_sh)
     Nu_i = 0.023 * Re_tube**0.8 * Pr**0.3 #Nusselt number in hot stream
     Nu_o = 0.193 * Re_sh**0.618 * Pr**0.333 #Nussult number in cold stream
-    print(Nu_i,Nu_o)
+    #print(Nu_i,Nu_o,333)
     hi = Nu_i*k/di_tube # inner surface Heat transfer coefficient
     ho = Nu_o*k/do_tube # Outer surface Heat transfer coefficient
     l_dash = L*No_pass
     Ai = np.pi*di_tube*l_dash
     Ao = np.pi*do_tube*l_dash
     H = (1/hi + Ai*np.log(do_tube/di_tube)/(2*np.pi*k_tube*l_dash) + (1/ho)*(Ai/Ao))**-1
-    print(H)
+    #print(H)
     return H
 def A(N,di,L):
     A = N * np.pi *di *L
@@ -139,9 +139,9 @@ def LMTD_counter(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L
         Th_prev = Th
         Tc_prev = Tc # Set previous values
         #print(Th,Tc)
-        print(T_in_hot,T_in_cold,Th,Tc)
+        #print(T_in_hot,T_in_cold,Th,Tc)
         LMTD = abs(((Th_in-Tc) - (Th-Tc_in))/(np.log((Th_in-Tc)/(Th-Tc_in)))) #LMTD equation
-        print(LMTD)
+        #print(LMTD)
         Tc = (H * A * LMTD * F)/(mass_flow_sh * Cp) + Tc_in 
         Th = -1* (H * A * LMTD * F)/(mass_flow_h * Cp)  + Th_in # Update temperatures
         R = (Th_in-Th)/(Tc-Tc_in)
@@ -167,7 +167,7 @@ def LMTD_counter(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H,error, Th, Tc, Cp,N,di,L
     return Q,e
 def NTU(mass_flow_h,mass_flow_sh,Th_in,Tc_in,H, Cp,N,di,L,No_pass,No_sh):
     A = N * np.pi *di *L #Total heat transfer area
-    print(A,mass_flow_h,Cp,H)
+    #print(A,mass_flow_h,Cp,H)
     mass_flow_tube = No_pass*mass_flow_h/N
     NTU = (H *A)/(Cp*mass_flow_h) #NTU equation
     print(NTU)
@@ -205,14 +205,14 @@ l_shell_max = 0.28 - (0.28/(n_baffle+1))
 l_shell = ltot/(n_pipe)
 if l_shell > l_shell_max:
     l_shell = l_shell_max
-print(l_shell)
+#print(l_shell)
 a_value = {"triangle":0.2, "square":0.34}
 No_pass = 2
 No_sh =1
 
 massflow_h_final, dp_total_hot, Re_hot = hot_dp_mf(n_pipe, massflow_h, No_pass, l_shell) 
-print(massflow_h_final, dp_total_hot, Re_hot)
-for i in range (1, 5):  
+#print(massflow_h_final, dp_total_hot, Re_hot)
+for i in range (1, 20):  
     #hot stream analysis
 
     #cold stream analysis
@@ -220,9 +220,9 @@ for i in range (1, 5):
     
     #print("dp")
     #print("mdot")
-    #print (massflow_c, massflow_h_final)
+    print (massflow_c)
 
-
+#print(Re_cold)
 
  
 
