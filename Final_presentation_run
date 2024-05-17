@@ -1,6 +1,6 @@
 import numpy as np
 
-
+import pandas as pd
 T_in_hot = 60
 T_in_cold = 20
 rho = 990.1
@@ -251,11 +251,13 @@ LMTD = LMTD_counter(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef , 0.01
 NTU_val = NTU(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
 LMTD_optimum = 0
 config = []
+df = pd.DataFrame(columns=("n_pipe", "n_baffle", "pitch", "No_pass", "No_sh"))
+i =0
 for n_pipe in range(6, 20):
     for n_baffle in range(1, 19):
             for No_pass in range (1, 5):
                 for No_sh in range (1, 3):
-
+                    
                     massflow_h = 0.001
                     massflow_c = 0.7
 
@@ -277,6 +279,8 @@ for n_pipe in range(6, 20):
 
                     NTU_val = NTU(massflow_h_final,massflow_c,T_in_hot,T_in_cold,H_coef, Cp,n_pipe,di_tube,l_shell,No_pass,No_sh)
                     print(n_pipe, n_baffle, pitch, No_pass, No_sh)
+                    df.loc[i] = [n_pipe, n_baffle, pitch, No_pass, No_sh]
+                    i = i+1
                     if LMTD[0] > LMTD_optimum:
                         LMTD_optimum = LMTD[0]
                         config = [n_pipe, n_baffle, pitch, No_pass, No_sh]
